@@ -16,4 +16,4 @@ const Search = ({searchState,searchStateSetter}) => {
   )
 }
 
-export default Search
+export default Search;

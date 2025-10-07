@@ -2,8 +2,9 @@ import {useEffect, useState } from 'react';
 import './App.css';
 import Search from './components/search.jsx';
 import {BounceLoader}  from "react-spinners";
-import {useDebounce} from 'react-use'
+import {useDebounce} from 'react-use';
 import MovieCard from './components/movieCard.jsx';
+import {UpdateSearchCount,selectTrendingMovies} from './AppWrite.js';
 
 const BASE_URL='https://api.themoviedb.org/3';
 
@@ -24,6 +25,7 @@ export const App = () => {
   const [movieList,setMovieList]=useState([]);
   const [loadingState,setLoadingState]=useState(true);
   const [debouncedSearchTerm,setDebouncedSearchTerm]=useState('');
+  const [trendingMoviesState,setTrendingMoviesState]=useState([])
   useDebounce(()=>setDebouncedSearchTerm(searchState),500,[searchState]);
 
   const fetchMovies = async (query='') => {
@@ -34,7 +36,7 @@ export const App = () => {
       
       const response = await fetch(url,API_OPTIONS);
       if (response.status==200){
-        console.log('received')
+        console.log('received');
       }
       if (response.status!=200){
         setLoadingState(false);
@@ -51,17 +53,25 @@ export const App = () => {
         throw new Error('failed to fetch22');
         return ;
       }
-
+      
       setMovieList( data.results||[]);
-      console.log('YES WORKED')
-      setLoadingState(false);
-
+      if (query!=''){
+        console.log(data.results[0]);
+        UpdateSearchCount(query,data.results[0]);
+      } 
     }catch(error){
       console.log(`error:${error}`);
+    }finally{
+      setLoadingState(false);
     }
   }
-
-
+  
+  
+  
+  useEffect(()=>{rows=selectTrendingMovies(); setTrendingMoviesState(rows||[])},[]);
+  
+  
+  
   useEffect(()=>{fetchMovies(debouncedSearchTerm);},
 [debouncedSearchTerm]
 );
@@ -102,4 +112,4 @@ export const App = () => {
 }
 
 
-export default App
+export default App;
