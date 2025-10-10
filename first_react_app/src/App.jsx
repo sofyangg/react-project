@@ -21,30 +21,38 @@ const API_OPTIONS={
 export const App = () => {
 
   const [searchState,searchStateSetter]=useState('');
-  const [errorState,setErrorState]=useState(false);
   const [movieList,setMovieList]=useState([]);
+  const [errorState,setErrorState]=useState(false);
   const [loadingState,setLoadingState]=useState(true);
+
   const [debouncedSearchTerm,setDebouncedSearchTerm]=useState('');
-  const [trendingMoviesState,setTrendingMoviesState]=useState([])
   useDebounce(()=>setDebouncedSearchTerm(searchState),500,[searchState]);
+
+  const [trendingMoviesState,setTrendingMoviesState]=useState([])
+
 
   const fetchMovies = async (query='') => {
     try{
+
+      //choosing URL and QUERY based on query:
       const url=query!=''?`${BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
       :`${BASE_URL}/discover/movie?sort_by=popularity.desc`
       console.log(url);
       
+      //API call:
       const response = await fetch(url,API_OPTIONS);
+      
+      //CHECK response.status:
       if (response.status==200){
         console.log('received');
-      }
-      if (response.status!=200){
+      }else{
         setLoadingState(false);
         setErrorState(true);
-        throw new Error(`failed to fetch11 ${response.status}`);
+        throw new Error(`failed to fetch: ${response.status}`);
         return ;
       }
 
+      //parsing response:
       const data= await response.json();
       
       if (data.total_results ===0){
@@ -55,8 +63,10 @@ export const App = () => {
       }
       
       setMovieList( data.results||[]);
+
+      // CHECK if a query exists and UpdateSearchCount if so:
+
       if (query!=''){
-        console.log(data.results[0]);
         UpdateSearchCount(query,data.results[0]);
       } 
     }catch(error){
@@ -65,13 +75,24 @@ export const App = () => {
       setLoadingState(false);
     }
   }
+
+
+  const trendingMoviesFetcher=async()=>{
+    try {
+      const rows=await selectTrendingMovies();
+      console.log(rows);
+      setTrendingMoviesState(rows||[]);
+    } catch (error) {
+      console.log(error)
+    }
+  }
   
   
+  // fetching searched for (trending) movies :
+  useEffect(()=>{trendingMoviesFetcher();},[]);
   
-  useEffect(()=>{rows=selectTrendingMovies(); setTrendingMoviesState(rows||[])},[]);
   
-  
-  
+  // debouncing search term to reduce api calls:
   useEffect(()=>{fetchMovies(debouncedSearchTerm);},
 [debouncedSearchTerm]
 );
@@ -79,8 +100,11 @@ export const App = () => {
 
   return (
     <main>
+
       <div className="pattern"/>
+      
       <div className="wrapper">
+        
         <header>
         <img src='./logo.svg' alt="logo" className="w-30 h-auto"/>
         <img src="./hero-img.png" alt="hero image"/>
@@ -88,8 +112,22 @@ export const App = () => {
         </header>
         <Search searchState={searchState} searchStateSetter={searchStateSetter}/>
       </div>
+
+      <section className="trending">
+        <h2>trending movies</h2>
+      <ul>
+        {trendingMoviesState.map((movie,index)=>
+        (<li key={movie.$id}>
+          <p>{index +1}</p>
+          <img src={movie.posterURL} alt={index +1}/>
+        </li>)
+        )
+        }
+      </ul>
+      </section>
+      
       <section className='all-movies'>
-        <h2 className='mt-4' >All Movies:</h2>
+        <h2>All Movies:</h2>
         {errorState?
         <p>error sorry</p>
         :loadingState?
@@ -104,9 +142,10 @@ export const App = () => {
           </ul>
           </section>
           )
-        
         }
+        
       </section>
+    
     </main>
   );
 }

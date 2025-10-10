@@ -13,23 +13,29 @@ const client= new Client()
 
 const Database=new TablesDB(client);
 
-
+//UpdateSearchCount function:
 export const UpdateSearchCount=async(searchTerm,movie)=>{
-    try{ const result= await Database.listRows({
+    try{ 
+        //getting rows associated with that search term:
+        const result= await Database.listRows({
         databaseId: PROJECT_DATABASE_ID,
         tableId: PROJECT_TABLE_DB,
         queries: [Query.equal('SearchTerm',searchTerm.toUpperCase() )] 
         });
+        
+        //checking rows count
         if (result.total!=0){
+            
+            //incrementing count by 1:
             const incremented= await Database.incrementRowColumn({databaseId: PROJECT_DATABASE_ID,
             tableId: PROJECT_TABLE_DB,
             rowId: result.rows[0].$id,
             column: 'count',
             value: 1,
         });
-        }
-        
-        else{
+        }else{
+            
+            //creating new row in appwrite DB TABLE if search term is new:
             const rowCreated=await Database.createRow({
             databaseId: PROJECT_DATABASE_ID,
             tableId: PROJECT_TABLE_DB,
@@ -46,6 +52,7 @@ export const UpdateSearchCount=async(searchTerm,movie)=>{
     }
 }
 
+//selectTrendingMovies function:
 export const selectTrendingMovies= async()=>{
     try{
     const result = await Database.listRows({
